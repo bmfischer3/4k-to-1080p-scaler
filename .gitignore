@@ -1,0 +1,5 @@
+*.csv
+header.py
+*.json
+*.DS_Store
+/Folder1/*
