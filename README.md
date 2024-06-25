@@ -23,3 +23,6 @@ You'll provide a directory for the script to run through. It will identify all .
    9. Delete the original 4k file in the original directory. 
    10. Move onto the next path in the list. 
 '''
+
+## Libraries Used
+ffmpeg, shutil, pathlib, subprocess, prettyprint
