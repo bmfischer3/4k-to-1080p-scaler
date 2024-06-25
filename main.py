@@ -1,48 +1,9 @@
 
 from check_standard_def import check_standard_def
+from convert_to_1080p import convert_to_1080p
 from get_4k_file_paths import get_original_file_paths
 from get_file_duration import get_length
 from header import *
-
-'''
-
-Steps to Success
-
-1. Identify all of the 4k videos in a directory. DONE
-2. Place those file paths in a list. DONE
-3. 1 by 1, create a secondary copy in a different location in Folder A. DONE
-4. Confirm the secondary copy matches the original. DONE
------ check video file size and video length. DONE
-5. Convert the secondary copy from 4K to 1080p and place in Folder A with "_1080p" appended to the end of the filename. DONE
-6. Confirm the conversion was successful by checking that the newly outputed file has a frame size of 1920 x 1080 DONE
-7. Copy the converted copy to the original file's location. 
-8. Verify the converted copy was successfully copied to the origin. 
-9. Delete the 1080p copy in Folder A. 
-10. Delete the 4k copy in Folder A. 
-11. Delete the 4k original in the origin. 
-12. Print (Success)
-13. Move on to the next file path in the list. 
-
-
-'''
-
-def convert_to_1080p(path_copy):
-    file_copy_name = (os.path.basename(path_copy).split('/')[-1]).split('.')[0]
-    file_ext = '.'+(os.path.basename(path_copy).split('/')[-1]).split('.')[1]
-    path_copy_name = '/'.join(str(x) for x in (os.path.abspath(path_copy).split('/')[:-1]))
-    conversion = subprocess.run(
-        [
-            'ffmpeg',
-            '-i', 
-            path_copy,
-            '-vf',
-            'scale=1920:1080',
-            '-c:a', 
-            'copy',
-            path_copy_name + '/' + file_copy_name + '_1080p' + file_ext,
-            ]
-            )
-    return conversion
 
 
 def main(file_path_list):
@@ -78,12 +39,45 @@ def main(file_path_list):
                 file_ext = '.'+(os.path.basename(og_path).split('/')[-1]).split('.')[1]
                 converted_path = '/'.join(str(x) for x in (os.path.abspath(dest_path)).split('/')[:-1]) + '/' + og_file_name + '_1080p' + file_ext
 
+                # The below is the 1080p path where the 1080p file will go into the original 4k file's directory. 
+                og_directory_1080_path = '/'.join(str(x) for x in (os.path.abspath(og_path)).split('/')[:-1]) + '/' + og_file_name + '_1080p' + file_ext
+
+
+                # Verify the converted file is in 1080p. 
                 if check_standard_def(converted_path) == True:
-                    shutil.copy2(converted_path, og_path)
-        
+
+                    # Copy the converted 1080p file to the original 4k file's directory. 
+                    shutil.copy2(converted_path, og_directory_1080_path)
+
+                    # Verify the converted file was correctly copied to the original 4k file's directory. 
+                    # Get the file size of the converted files in the copy and og path. 
+                    converted_file_size_copy_path = os.stat(converted_path)
+                    converted_file_size_og_path = os.stat(og_directory_1080_path)
+
+                    if converted_file_size_og_path.st_size == converted_file_size_copy_path.st_size:
+                        if get_length(converted_path) == get_length(og_directory_1080_path):
+                            print("Converted file in the temp directory and converted file in the original directory match")
+
+                            # Delete the converted copy in the temp directory
+                            os.remove(converted_path)
+
+                            # Delete the 4k copy in the temp directory
+                            os.remove(dest_path)
+
+                            # Delete the 4k original in the origin directory
+                            os.remove(og_path)
+
+                            print(f"Success in converting and removing files for {og_file_name}.")
+
+                        else:
+                            print("Converted files do not match. There was an error.")
+                    else:
+                        print("Converted files do not match. There was an error.")
         else:
             print(f"Files are not the same size. {original_file_size} does not equal {copied_file_size} or the durations do not match. {og_path} and {dest_path} are the issues.")
 
 
 
-a = main(origin_file_path)
+a = get_original_file_paths(origin_file_path)
+
+b = main(a)
