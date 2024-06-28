@@ -1,6 +1,0 @@
-*.csv
-header.py
-*.json
-*.DS_Store
-/Folder1/*
-*.pyc
