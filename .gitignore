@@ -1,6 +1,9 @@
-*.csv
-header.py
-*.json
-*.DS_Store
-/Folder1/*
-*.pyc
+__pycache__/**
+.venv/**
+Folder1/**
+°.mp4
+*.mov
+! example.env 
+*.env
+*.DS_STORE
+
