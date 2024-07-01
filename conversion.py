@@ -85,7 +85,7 @@ def main(file_path_list: list):
 
                     # TODO: hashing check
                     if converted_file_copy_hash == converted_file_og_hash:
-                        print("Converted file in the temp directory and converted file in the original directory match")
+                        # print("Converted file in the temp directory and converted file in the original directory match")
 
                         # Delete the converted copy in the temp directory
                         os.remove(converted_path)
@@ -96,7 +96,7 @@ def main(file_path_list: list):
                         # Delete the 4k original in the origin directory
                         os.remove(og_path)
 
-                        print(f"Success in converting and removing files for {og_file_name[0]}.")
+                        # print(f"Success in converting and removing files for {og_file_name[0]}.")
                     else:
                         print("Converted files do not match. There was an error.")
             else:
@@ -123,7 +123,7 @@ def main(file_path_list: list):
 
 
 def md5(file_name: str) -> str:
-    """_summary_ Creates MD5 hash for the provided file. 
+    """_summary_ Creates MD5 hash for the provided file path.
 
     Args:
         file_name (str): _description_
@@ -154,13 +154,13 @@ def check_standard_def(converted_path: str) -> bool:
     height = probe['streams'][0]['height']
     if width == 1920:
         if height == 1080:
-            print(f'Return True - {converted_path} is 1920x1080')
+            # print(f'Return True - {converted_path} is 1920x1080')
             return True
         else:
-            print(f'Return False - {converted_path} is not 1920x1080')
+            # print(f'Return False - {converted_path} is not 1920x1080')
             return False
     else:
-        print(f'Return False - {converted_path} is not 1920x1080')
+        # print(f'Return False - {converted_path} is not 1920x1080')
         return False
 
 
@@ -187,10 +187,10 @@ def check_high_def(original_path: str) -> bool:
 
         if feature_check_high_def == True:
             if width >= 3840 and height >= 2160:
-                print(f'Return True - {original_path} is 3840 x 2160')
+                # print(f'Return True - {original_path} is 3840 x 2160')
                 return True
             else:
-                print(f'Return False - {original_path} is not 3840 x 2160')
+                # print(f'Return False - {original_path} is not 3840 x 2160')
                 return False
         else:
             print("Feature flag for checking high defintiion 4k video is off.")
@@ -239,8 +239,10 @@ def convert_to_1080p(path_copy: str) -> str:
     Returns:
         str: Returns the path of the 1080p copy in the temporary directory as a string. 
     """
-    file_copy_name = (os.path.basename(path_copy).split('/')[-1]).split('.')[0]
-    file_ext = '.'+(os.path.basename(path_copy).split('/')[-1]).split('.')[1]
+    path_copy_base = str(os.path.basename(path_copy).split('/')[-1])
+
+    file_copy_name = (path_copy_base).split('.')[0]
+    file_ext = '.'+(path_copy_base).split('.')[1]
     path_copy_name = '/'.join(str(x) for x in (os.path.abspath(path_copy).split('/')[:-1]))
     conversion = subprocess.run(
         [
