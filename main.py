@@ -6,7 +6,6 @@ from pathlib import Path
 from dotenv import load_dotenv
 import subprocess
 import prettyprint
-import videoff
 import os
 import hashlib
 
@@ -61,15 +60,14 @@ def main(file_path_list: list):
                 convert_to_1080p(dest_path)
                 file_name = os.path.basename(og_path).split('/')
 
-                og_file_name = file_name.split('.')[0]
-                file_ext = f'.{file_name.split(".")[-1]}'
+                og_file_name = file_name[0].split('.')
+                file_ext = '.' + og_file_name[-1]
 
-                
-
-                converted_path = '/'.join(str(x) for x in (os.path.abspath(dest_path)).split('/')[:-1]) + '/' + og_file_name + '_1080p' + file_ext
+                # The below variable creates the path name for where the converted 1080p file will live in the temporary directory. 
+                converted_path = '/'.join(str(x) for x in (os.path.abspath(dest_path)).split('/')[:-1]) + '/' + og_file_name[0] + '_1080p' + file_ext
 
                 # The below is the 1080p path where the 1080p file will go into the original 4k file's directory. 
-                og_directory_1080_path = '/'.join(str(x) for x in (os.path.abspath(og_path)).split('/')[:-1]) + '/' + og_file_name + '_1080p' + file_ext
+                og_directory_1080_path = '/'.join(str(x) for x in (os.path.abspath(og_path)).split('/')[:-1]) + '/' + og_file_name[0] + '_1080p' + file_ext
 
 
                 # Verify the converted file is in 1080p. 
@@ -96,7 +94,7 @@ def main(file_path_list: list):
                         # Delete the 4k original in the origin directory
                         os.remove(og_path)
 
-                        print(f"Success in converting and removing files for {og_file_name}.")
+                        print(f"Success in converting and removing files for {og_file_name[0]}.")
                     else:
                         print("Converted files do not match. There was an error.")
             else:
