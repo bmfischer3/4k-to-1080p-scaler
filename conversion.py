@@ -31,7 +31,7 @@ finished_file_size = []
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
 
-def main(file_path_list: list):
+def convert_videos_main(file_path_list: list):
 
     # feature flag
 
@@ -69,23 +69,44 @@ def main(file_path_list: list):
                 converted_path = '/'.join(str(x) for x in (os.path.abspath(dest_path)).split('/')[:-1]) + '/' + og_file_name[0] + '_1080p' + file_ext
 
                 # The below is the 1080p path where the 1080p file will go into the original 4k file's directory. 
-                og_directory_1080_path = '/'.join(str(x) for x in (os.path.abspath(og_path)).split('/')[:-1]) + '/' + og_file_name[0] + '_1080p' + file_ext
+
+                og_directory_1080_path_components = []
+
+                for component in os.path.abspath(og_path).split('/')[:-1]:
+                    og_directory_1080_path_components.append(component)
+                
+
+                # Remove the blank space in the first part of the list. 
+                og_directory_1080_path_components.remove('')
+                # og_directory_1080_path_components.append(str(x) for x in (os.path.abspath(og_path)).split('/')[:-1])
+                og_directory_1080_path_components.append(og_file_name[0] + '_1080p' + file_ext)
+
+                # og_directory_1080_path_base = '/'.join(str(x) for x in (os.path.abspath(og_path)).split('/')[:-1]) + '/' + og_file_name[0] + '_1080p' + file_ext
+                og_directory_1080_path_string = '/' + os.path.join(*og_directory_1080_path_components)
+                og_directory_1080_path = os.path.normpath(og_directory_1080_path_string)
 
 
-                # Verify the converted file is in 1080p. 
-                if check_standard_def(converted_path) == True:
+                # /Volumes/Videos/InProgressProjects/TeslaStealthHitch/Footage/Subtest
 
-                    # Copy the converted 1080p file to the original 4k file's directory. 
-                    shutil.copy2(converted_path, og_directory_1080_path)
+                print(f"Processing File: {og_directory_1080_path}")
 
+                try:
+
+                    # Verify the converted file is in 1080p. 
+                    if check_standard_def(converted_path) == True:
+
+                        # Copy the converted 1080p file to the original 4k file's directory. 
+                        shutil.copy2(converted_path, og_directory_1080_path)
+                except OSError as e:
+                    print(e)
+                    print("The stupid fucking path error is still here.")
                     # Verify the converted file was correctly copied to the original 4k file's directory. 
 
                     converted_file_copy_hash = md5(converted_path)
                     converted_file_og_hash = md5(og_directory_1080_path)
 
-                    # TODO: hashing check
                     if converted_file_copy_hash == converted_file_og_hash:
-                        # print("Converted file in the temp directory and converted file in the original directory match")
+                        print("Converted file in the temp directory and converted file in the original directory match")
 
                         # Delete the converted copy in the temp directory
                         os.remove(converted_path)
@@ -99,8 +120,8 @@ def main(file_path_list: list):
                         # print(f"Success in converting and removing files for {og_file_name[0]}.")
                     else:
                         print("Converted files do not match. There was an error.")
-            else:
-                print(f"Files are not the same. {og_path} and {dest_path} are the issues.")
+                else:
+                    print(f"Files are not the same. {og_path} and {dest_path} are the issues.")
 
     else:
         print("Feature flag is turned off for main.")
@@ -108,16 +129,16 @@ def main(file_path_list: list):
 
 # Feature flag to return the video file size for testing. Set the flag to false for a production environment. 
 
-    if finished_file_size == True:
-        for complete_video_path in og_path:
-            video_name_size_pair = []
-            complete_video_bytes_size = os.stat(complete_video_path).st_size
-            completed_video_name = os.path.basename(complete_video_path).split('/')[-1]
-            video_name_size_pair.append(completed_video_name)
-            video_name_size_pair.append(complete_video_bytes_size)
-            finished_file_size.append(video_name_size_pair)
+    # if finished_file_size == True:
+    #     for complete_video_path in og_path:
+    #         video_name_size_pair = []
+    #         complete_video_bytes_size = os.stat(complete_video_path).st_size
+    #         completed_video_name = os.path.basename(complete_video_path).split('/')[-1]
+    #         video_name_size_pair.append(completed_video_name)
+    #         video_name_size_pair.append(complete_video_bytes_size)
+    #         finished_file_size.append(video_name_size_pair)
 
-    return finished_file_size
+    # return finished_file_size
 
 
 
@@ -212,19 +233,23 @@ def get_original_file_paths(original_file_path: str) -> list:
     """
     for i in os.listdir(original_file_path):
 
+        # This if statement is added to deal with AppleDouble Files. 
+        if not i.startswith("._"):
+
+
         # Get the path of each file in the directory. 
-        filename = os.path.basename(i)
-        filepath = str(original_file_path) + i
-        
-        # Check the video file extension.  
+            filename = os.path.basename(i)
+            filepath = str(original_file_path) + i
+            
+            # Check the video file extension.  
 
-        if filename.lower().endswith('.mp4') or filename.lower().endswith('.mov'):
+            if filename.lower().endswith('.mp4') or filename.lower().endswith('.mov'):
 
-        # Check the video resoloution and verify it's a 4k file. 
+            # Check the video resoloution and verify it's a 4k file. 
 
-            if check_high_def(filepath) == True:
-                file_name_list.append(filename)
-                file_path_list.append(filepath)
+                if check_high_def(filepath) == True:
+                    file_name_list.append(filename)
+                    file_path_list.append(filepath)
                 
     return file_path_list
 
@@ -259,4 +284,5 @@ def convert_to_1080p(path_copy: str) -> str:
     
     return conversion
 
-a = main(get_original_file_paths(original_file_path))
+a = get_original_file_paths(original_file_path)
+b = convert_videos_main(a)
