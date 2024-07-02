@@ -99,7 +99,6 @@ def convert_videos_main(file_path_list: list):
                         shutil.copy2(converted_path, og_directory_1080_path)
                 except OSError as e:
                     print(e)
-                    print("The stupid fucking path error is still here.")
                     # Verify the converted file was correctly copied to the original 4k file's directory. 
 
                     converted_file_copy_hash = md5(converted_path)
