@@ -18,6 +18,7 @@ temp_file_path = os.getenv("TEMP_FILE_PATH")
 feature_check_high_def = bool(os.getenv("FEATURE_CHECK_HIGH_DEF"))
 feature_run_main = bool(os.getenv("FEATURE_RUN_MAIN"))
 finished_file_size = bool(os.getenv("GET_FINISHED_FILE_SIZE"))
+logging_active = bool(os.getenv("LOGGING_ON"))
 
 
 # Globals
@@ -28,14 +29,40 @@ dest_filepath_list = []
 combined_list = []
 finished_file_size = []
 
-logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
+
+def setup_logger(name, log_file, level=logging.DEBUG):
+    """To setup as many loggers as needed."""
+    # Source: https://stackoverflow.com/questions/11232230/logging-to-two-files-with-different-settings 
+
+    handler = logging.FileHandler(log_file)
+    formatter = logging.Formatter(fmt=' %(name)s :: %(levelname)-8s :: %(message)s')
+    handler.setFormatter(formatter)
+
+    logger = logging.getLogger(name)
+    logger.setLevel(level)
+    logger.addHandler(handler)
+
+    return logger
+
+if logging_active == True:
+    logger = setup_logger("logger", "test_log.log", logging.DEBUG)
+    logger.debug("Initial loogging file has been created.")
+
+    file_error_logger = setup_logger("file_error_logger", "file_error_log_list.log", logging.DEBUG)
+    file_error_logger.debug("File error logger file has been initiated.")
+else:
+    print(f"Logging feature flag turned off. Review the .env file and set to true to enable logging.")
 
 
 def convert_videos_main(file_path_list: list):
+    """_summary_ Converts files within the video path list from 4K to 1080p. 
 
+    Args:
+        file_path_list (list): Provide a list of paths to video files in a .mp4 or .mov format. 
+    """
     # feature flag
-
     if feature_run_main == True:
+        logger.debug("Conversion functions have been initiated. Collectin file paths. ")
 
         # Create the path for the destination file
         dest_folder = temp_file_path
@@ -43,20 +70,25 @@ def convert_videos_main(file_path_list: list):
         for file in file_name_list:
             dest_path = dest_folder + "/" + file
             dest_filepath_list.append(dest_path)
+            logger.debug(f"{dest_path} has been appended to the dest_filepath_list.")
 
         # Zip the lists
-
         combined_list_zipped = list(zip(file_path_list,dest_filepath_list))
+        logger.debug("The original file path list and destination file path list have been zipped together.")
 
         for og_path, dest_path in combined_list_zipped:
             # Create a copy of the original file in the temporary directory. 
             shutil.copy2(og_path, dest_path)
+            logger.debug(f"The {og_path} has been copied to the {dest_path}.")
 
             # Get the size of each file in bytes and check the original and new copy match. 
             original_file_hash = md5(og_path)
+            logger.debug(f"The hash size of the original file: {og_path} is {original_file_hash}.")
             copied_file_hash = md5(dest_path)
+            logger.debug(f"The hash size of the copied file: {dest_path} is {copied_file_hash}.")
 
             if original_file_hash == copied_file_hash:
+                logger.info(f"The original file hash and copied file hash match. Conversion is starting for {og_path}")
             
                 # Start converting the copied file. 
                 convert_to_1080p(dest_path)
@@ -68,78 +100,97 @@ def convert_videos_main(file_path_list: list):
                 # The below variable creates the path name for where the converted 1080p file will live in the temporary directory. 
                 converted_path = '/'.join(str(x) for x in (os.path.abspath(dest_path)).split('/')[:-1]) + '/' + og_file_name[0] + '_1080p' + file_ext
 
-                # The below is the 1080p path where the 1080p file will go into the original 4k file's directory. 
-
+                # 1080p path where the 1080p file will go into the original 4k file's directory. 
                 og_directory_1080_path_components = []
 
+                # Break down the path of the oroginal 4k file into its individual components and add them to a list without the slashes.  
                 for component in os.path.abspath(og_path).split('/')[:-1]:
                     og_directory_1080_path_components.append(component)
                 
-
                 # Remove the blank space in the first part of the list. 
                 og_directory_1080_path_components.remove('')
-                # og_directory_1080_path_components.append(str(x) for x in (os.path.abspath(og_path)).split('/')[:-1])
-                og_directory_1080_path_components.append(og_file_name[0] + '_1080p' + file_ext)
 
-                # og_directory_1080_path_base = '/'.join(str(x) for x in (os.path.abspath(og_path)).split('/')[:-1]) + '/' + og_file_name[0] + '_1080p' + file_ext
+
+                # Append the "_1080p" annotation and file extension to the end of the list and then join everything to create a path string. 
+                og_directory_1080_path_components.append(og_file_name[0] + '_1080p' + file_ext)
                 og_directory_1080_path_string = '/' + os.path.join(*og_directory_1080_path_components)
                 og_directory_1080_path = os.path.normpath(og_directory_1080_path_string)
 
-
-                # /Volumes/Videos/InProgressProjects/TeslaStealthHitch/Footage/Subtest
-
-                print(f"Processing File: {og_directory_1080_path}")
+                logger.info(f"Processing File: {og_directory_1080_path}")
 
                 try:
-
+                    # If the below runs successfully, no exception block is executed. 
                     # Verify the converted file is in 1080p. 
                     if check_standard_def(converted_path) == True:
 
                         # Copy the converted 1080p file to the original 4k file's directory. 
+                        logger.info(f"Attempting to copy the 1080p copy {converted_path} to the original 4k file's directory: {og_directory_1080_path}.")
                         shutil.copy2(converted_path, og_directory_1080_path)
-                except OSError as e:
-                    print(e)
-                    # Verify the converted file was correctly copied to the original 4k file's directory. 
 
+                        converted_file_copy_hash = md5(converted_path)
+                        converted_file_og_hash = md5(og_directory_1080_path)
+                        
+                        remove_duplicate_files(converted_file_copy_hash, converted_file_og_hash, converted_path, dest_path, og_path, og_file_name)
+                        logger.info(f"{og_path} successfully converted and duplicates have been removed.")
+
+
+                    else:
+                        file_error_logger.debug(f"There is an error with {converted_path}.")
+
+
+
+                except OSError as e:
+                    logger.warning(f"An OSError issue has occurred for {og_file_name}. Continuing to verify the converted file was correctly copied to the original 4k file's directory. ")
+                    
                     converted_file_copy_hash = md5(converted_path)
                     converted_file_og_hash = md5(og_directory_1080_path)
 
-                    if converted_file_copy_hash == converted_file_og_hash:
-                        print("Converted file in the temp directory and converted file in the original directory match")
+                    logger.debug(f"With OSError raised, The converted copy placed in the original 4k directory and the converted copy in the temprorary directory have the following hashes: {converted_file_og_hash}, {converted_file_copy_hash}")
+                    file_error_logger.debug(f"{e} raised for {og_file_name}.")
+              
+                    remove_duplicate_files(converted_file_copy_hash, converted_file_og_hash, converted_path, dest_path, og_path, og_file_name)
 
-                        # Delete the converted copy in the temp directory
-                        os.remove(converted_path)
-
-                        # Delete the 4k copy in the temp directory
-                        os.remove(dest_path)
-
-                        # Delete the 4k original in the origin directory
-                        os.remove(og_path)
-
-                        # print(f"Success in converting and removing files for {og_file_name[0]}.")
-                    else:
-                        print("Converted files do not match. There was an error.")
+                except Exception as e:
+                    logger.error(f"Some other error has occurred: {e}")
+                
                 else:
-                    print(f"Files are not the same. {og_path} and {dest_path} are the issues.")
+                    # Else statement executes if the control flow leaves the try block, no exception was raised and no return, continue, or break statement was executed. 
+                    # The below code executes if the try clause executes without throwing an errory. 
+                    logger.info(f"else statement has executed.")
 
     else:
-        print("Feature flag is turned off for main.")
+        logger.info("Feature flag is turned off for main.")
 
 
-# Feature flag to return the video file size for testing. Set the flag to false for a production environment. 
+def remove_duplicate_files(converted_file_copy_hash: str, converted_file_og_hash: str, converted_path: str, dest_path: str, og_path: str, og_file_name:str) -> None:
+    """_summary_ Removes the converted copy in temp dir, 4k copy in temp dir, and 4k original in origin dir after confirming the hashes of the converted copies in the temp and origin dir match. 
 
-    # if finished_file_size == True:
-    #     for complete_video_path in og_path:
-    #         video_name_size_pair = []
-    #         complete_video_bytes_size = os.stat(complete_video_path).st_size
-    #         completed_video_name = os.path.basename(complete_video_path).split('/')[-1]
-    #         video_name_size_pair.append(completed_video_name)
-    #         video_name_size_pair.append(complete_video_bytes_size)
-    #         finished_file_size.append(video_name_size_pair)
+    Args:
+        converted_file_copy_hash (str): MD5 hash of the 1080p file residing in the temp dir. 
+        converted_file_og_hash (str): MD5 hash of the 1080p file that has been copied to the origin dir. 
+        converted_path (str): Path of the 1080p file in the temp dir. 
+        dest_path (str): Path of the 4k file in the temp dir. 
+        og_path (str): Path fo the 4k file in the origin dir. 
+        og_file_name (str): Name of the 4k file in the origin dir. 
+    """
+    if converted_file_copy_hash == converted_file_og_hash:
+        logger.info(f"Converted file: {dest_path} in the temp directory and converted file in the original directory match")
 
-    # return finished_file_size
+        # Delete the converted copy in the temp directory
+        os.remove(converted_path)
+        logger.debug(f"Converted path: {converted_path} has been deleted.")
 
+        # Delete the 4k copy in the temp directory
+        os.remove(dest_path)
+        logger.debug(f"4K copy path: {dest_path} has been deleted.")
 
+        # Delete the 4k original in the origin directory
+        os.remove(og_path)
+        logger.debug(f"4K original: {og_path} has been deleted.")
+        logger.info(f"Success in converting and removing files for {og_file_name}")
+    else:
+        file_error_logger.debug(f"There is an error with {converted_path}.")
+    
 
 
 def md5(file_name: str) -> str:
@@ -166,24 +217,27 @@ def check_standard_def(converted_path: str) -> bool:
         converted_path (_str_): File path as a string for where the converted video file resides. 
 
     Returns:
-        bool: _descri
+        bool: Returns True if video is 1920 x 1080, else returns False. 
     """
     #TODO: error handling
-    probe = ffmpeg.probe(converted_path)
-    width = probe['streams'][0]['width']
-    height = probe['streams'][0]['height']
-    if width == 1920:
-        if height == 1080:
-            # print(f'Return True - {converted_path} is 1920x1080')
-            return True
+
+    try:
+        probe = ffmpeg.probe(converted_path)
+        width = probe['streams'][0]['width']
+        height = probe['streams'][0]['height']
+        if width == 1920:
+            if height == 1080:
+                logger.info(f"Return True - {converted_path} is 1920x1080.")
+                return True
+            else:
+                logger.info(f"Return False - {converted_path} is not 1920x1080.")
+                return False
         else:
-            # print(f'Return False - {converted_path} is not 1920x1080')
+            logger.info(f"Return False - {converted_path} is not 1920x1080.")
             return False
-    else:
-        # print(f'Return False - {converted_path} is not 1920x1080')
-        return False
 
-
+    except Exception as e:
+        file_error_logger.debug(f"Error with: {converted_path}.  -> {e}")
 
 def check_high_def(original_path: str) -> bool:
     """ Check the resolution of file and returns true if in 3840 x 2160
@@ -207,13 +261,13 @@ def check_high_def(original_path: str) -> bool:
 
         if feature_check_high_def == True:
             if width >= 3840 and height >= 2160:
-                # print(f'Return True - {original_path} is 3840 x 2160')
+                logging.info(f"Return True - {original_path} is 3840 x 2160")
                 return True
             else:
-                # print(f'Return False - {original_path} is not 3840 x 2160')
+                logging.info(f"Return False - {original_path} is not 3840 x 2160")
                 return False
         else:
-            print("Feature flag for checking high defintiion 4k video is off.")
+            logging.info("Feature flag for checking high defintiion 4k video is off.")
         
 
     except ffmpeg.Error as ex:
@@ -232,24 +286,24 @@ def get_original_file_paths(original_file_path: str) -> list:
     """
     for i in os.listdir(original_file_path):
 
-        # This if statement is added to deal with AppleDouble Files. 
+        # This if statement is added to deal with AppleDouble Files on NAS. 
         if not i.startswith("._"):
-
 
         # Get the path of each file in the directory. 
             filename = os.path.basename(i)
             filepath = str(original_file_path) + i
             
             # Check the video file extension.  
-
             if filename.lower().endswith('.mp4') or filename.lower().endswith('.mov'):
 
             # Check the video resoloution and verify it's a 4k file. 
-
                 if check_high_def(filepath) == True:
+                    logger.debug(f"{filepath} is verified to be in 4k.")
                     file_name_list.append(filename)
                     file_path_list.append(filepath)
-                
+        else:
+            logger.debug(f"{i} appears to be an AppleDouble File is skipped.")
+    logger.debug(f"Success in returning original file paths list.")            
     return file_path_list
 
 
@@ -264,10 +318,10 @@ def convert_to_1080p(path_copy: str) -> str:
         str: Returns the path of the 1080p copy in the temporary directory as a string. 
     """
     path_copy_base = str(os.path.basename(path_copy).split('/')[-1])
-
     file_copy_name = (path_copy_base).split('.')[0]
     file_ext = '.'+(path_copy_base).split('.')[1]
     path_copy_name = '/'.join(str(x) for x in (os.path.abspath(path_copy).split('/')[:-1]))
+    logger.debug(f"{path_copy_name} has successfully been created. Conversion process is starting.")
     conversion = subprocess.run(
         [
             'ffmpeg',
