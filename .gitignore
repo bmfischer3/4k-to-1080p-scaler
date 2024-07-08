@@ -6,4 +6,5 @@ Folder1/**
 ! example.env 
 *.env
 *.DS_STORE
-
+*.log
+testing.py
