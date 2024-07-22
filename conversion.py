@@ -387,5 +387,5 @@ def convert_to_1080p(hd_path_copy: str) -> str:
 
 
 
-
-a = convert_videos_main("/Volumes/Videos/InProgressProjects/FSA Dollar Spend/Footage/1")
+# Provide path to directory containing 4k files below. 
+a = convert_videos_main(original_file_path)
