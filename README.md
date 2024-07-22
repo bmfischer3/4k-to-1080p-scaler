@@ -1,5 +1,9 @@
 # 4K to 1080p Scale Down
 
+# To Do
+- Add in feature showing how much space has been saved. 
+- Add in a feature to show files that failed conversion. 
+- 
 
 ## Purpose
 Space is a luxury and 4k videos take up a ton of digital real estate. A lot of the space on NAS being taken up by older 4K footage that I still want to keep, but don't necessarily need in 4K anymore. With the numerous files and directories I have, I opted to write python program to go through and convert my files from 4K to 1080p using FFMPEG. 
