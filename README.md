@@ -98,9 +98,8 @@ Instructions for setting up the project on a local machine.
 ## Usage
 Instructions for how to use the project.
 
-1. **Step 1:**
-   - details on step 1
-    ```bash
+1. Input environment variables
+2. Conversion.py
 
 
 ## Quick Glance at Results from Example Footage
@@ -154,4 +153,3 @@ This section documents the history of major changes made to the repository.
 | 2024-07-22 | 1.0.0   | B. Fischer   | Cleaned up for release and publication.               |
 | YYYY-MM-DD | X.X.X   | Your Name    | Description of the changes made.                      |
 | YYYY-MM-DD | X.X.X   | Your Name    | Description of the changes made.                      |
-
