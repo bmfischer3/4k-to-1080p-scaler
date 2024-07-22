@@ -1,25 +1,6 @@
-# 4K to 1080p Scale Down
-
-# To Do
-- Add in feature showing how much space has been saved. 
-- Add in a feature to show files that failed conversion. 
-- 
-
-
-## Summary
-You'll provide a directory for the script to run through. It will identify all .mp4, .MP4, .mov, .MOV files in a resolution of 3840 x 2160 and convert those files to 1080p. 
-'''
-
-
-
-
-
 # 4K to 1080p Video Converter
 
 ## Table of Contents
-- [4K to 1080p Scale Down](#4k-to-1080p-scale-down)
-- [To Do](#to-do)
-  - [Summary](#summary)
 - [4K to 1080p Video Converter](#4k-to-1080p-video-converter)
   - [Table of Contents](#table-of-contents)
   - [Overview](#overview)
